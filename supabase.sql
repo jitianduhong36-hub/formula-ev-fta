@@ -57,9 +57,9 @@ begin
  update public.fta_rooms set model=p_model,revision=revision+1,updated_at=now() where id=p_id returning * into r;
  return jsonb_build_object('model',r.model,'revision',r.revision);
 end $$;
-revoke all on function public.fta_create(uuid,text,jsonb) from public;
-revoke all on function public.fta_read(uuid,text) from public;
-revoke all on function public.fta_write(uuid,text,jsonb,bigint) from public;
+revoke all on function public.fta_create(uuid,text,jsonb) from public, authenticated;
+revoke all on function public.fta_read(uuid,text) from public, authenticated;
+revoke all on function public.fta_write(uuid,text,jsonb,bigint) from public, authenticated;
 grant execute on function public.fta_create(uuid,text,jsonb) to anon;
 grant execute on function public.fta_read(uuid,text) to anon;
 grant execute on function public.fta_write(uuid,text,jsonb,bigint) to anon;
