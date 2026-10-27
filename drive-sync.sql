@@ -41,14 +41,14 @@ end $$;
 revoke all on function fta_private.check_export_key(text) from public,anon,authenticated;
 
 create function public.fta_drive_activate(p_key text) returns jsonb language plpgsql security definer set search_path='' as $$
-begin perform fta_private.check_export_key(p_key);update fta_private.drive_settings set enabled=true,worker_seen=now();return jsonb_build_object('enabled',true);end $$;
+begin perform fta_private.check_export_key(p_key);update fta_private.drive_settings set enabled=true,worker_seen=now() where singleton=true;return jsonb_build_object('enabled',true);end $$;
 
 create function public.fta_drive_pull(p_key text,p_limit integer default 5) returns jsonb language plpgsql security definer set search_path='' as $$
 declare j record; items jsonb:='[]'::jsonb; lease uuid;
 begin
  perform fta_private.check_export_key(p_key);
  if not exists(select 1 from fta_private.drive_settings where enabled) then return items;end if;
- update fta_private.drive_settings set worker_seen=now();
+ update fta_private.drive_settings set worker_seen=now() where singleton=true;
  for j in select q.room_id,r.model,r.revision,q.file_id from fta_private.drive_jobs q join public.fta_rooms r on r.id=q.room_id
  where q.requested>q.saved and q.next_attempt<=now() and (q.lease_until is null or q.lease_until<now())
  order by q.next_attempt limit greatest(1,least(coalesce(p_limit,5),10)) for update of q skip locked loop
@@ -93,3 +93,4 @@ revoke all on function public.fta_drive_ack(text,uuid,uuid,bigint,text,text) fro
 revoke all on function public.fta_drive_status(uuid,text) from public,authenticated;
 revoke all on function public.fta_drive_enroll(uuid,text) from public,authenticated;
 grant execute on function public.fta_drive_activate(text),public.fta_drive_pull(text,integer),public.fta_drive_ack(text,uuid,uuid,bigint,text,text),public.fta_drive_status(uuid,text),public.fta_drive_enroll(uuid,text) to anon;
+
