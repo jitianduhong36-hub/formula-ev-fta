@@ -1,0 +1,6 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import vm from 'node:vm';
+const source=readFileSync(new URL('./google-drive-sync.gs',import.meta.url),'utf8');
+function context(extra={}){const c=vm.createContext(extra);new vm.Script(source).runInContext(c);return c;}
+test('Drive filename remains a JSON file with stable room identity',()=>{const c=context();const name=c.ftaFileName_({id:'abc-123',model:{title:'HV/Control\nFault'}});assert.equal(name,'HV Control Fault [abc-123].json');});
+test('file lookup reuses mapped file and prevents writes outside target folder',()=>{const c=context({PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},DriveApp:{getFileById:()=>({isTrashed:()=>false,getParents:()=>({hasNext:()=>false})})}});assert.throws(()=>c.findFtaFile_({}, {id:'abc',file_id:'file1'}),/指定フォルダー/);});
+test('retry locates a file already created before server acknowledgement',()=>{let step=0;const file={getDescription:()=> 'FTA_ROOM:abc\nprevious attempt'};const c=context({PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})}});const found=c.findFtaFile_({getFiles:()=>({hasNext:()=>step===0,next:()=>{step++;return file;}})},{id:'abc'});assert.equal(found,file);});

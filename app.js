@@ -1,7 +1,7 @@
 import {analyze,validate} from './engine.js';import {sample} from './sample.js';
-import {newNodeId} from './collaboration.js';import {setupCollaboration} from './collaboration-ui.js?v=edit5';
-import {localKey,addChild,setupSheets} from './sheets.js?v=edit5';
-import {setupTreeEditor} from './tree-editor-ui.js?v=edit5';
+import {newNodeId} from './collaboration.js';import {setupCollaboration} from './collaboration-ui.js?v=drive1';
+import {localKey,addChild,setupSheets} from './sheets.js?v=drive1';
+import {setupTreeEditor} from './tree-editor-ui.js?v=drive1';
 const $=id=>document.getElementById(id),clone=x=>JSON.parse(JSON.stringify(x)),esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 let model=clone(sample),selected='TOP',lastSVG='';try{const saved=localStorage.getItem(localKey(location.hash));if(saved){const parsed=JSON.parse(saved);validate(parsed);model=parsed;selected=model.top;}}catch{}const fmt=x=>x===null?'—':x===0?'0':x.toPrecision(5);
 let shared=null,formDirty=false,sheetManager=null,treeEditor=null,editingLocked=false;
