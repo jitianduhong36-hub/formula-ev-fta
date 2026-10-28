@@ -1,4 +1,4 @@
-import {draftNotice,fmeaConfig} from './fmea-config.js?v=fmea1';
+import {draftNotice,fmeaConfig} from './fmea-config.js?v=codes1';
 export const fmeaColumns=['ID','部品・サブシステム','機能','故障モード','故障原因','局所的影響','上位影響・経路','最終影響','S','O','D','RPN','現行対策','検出手段','推奨対策','該当カットセットID','参考分類','単一故障点・条件','備考'];
 export function fmeaValues(row,config=fmeaConfig){return [row.id,row.parts,row.function,row.failureMode,row.cause,row.localEffect,row.upperEffect,row.endEffect,row.S,row.O,row.D,row.rpn,row.controls,row.detection,row.recommended,row.cutIds.join('\n'),row.group,row.flag,row.notes+'\nS：'+row.sSource+'／O：'+row.oSource+'／D：'+row.dSource+'\np='+row.p+'、期間：'+row.mission+'、基準：'+config.version];}
 export function escapeCsv(value){let s=value===null||value===undefined?'':String(value);if(/^[\s\u0000-\u001f]*[=+\-@]/u.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}

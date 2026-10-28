@@ -1,3 +1,4 @@
+import {systemText,validateEventCodes} from './event-codes.js?v=codes1';
 export const groupColors=[
  {color:'#1565c0',fill:'#eaf2ff',name:'青'}, {color:'#ad3d13',fill:'#fff0e8',name:'橙'},
  {color:'#28743b',fill:'#eaf7ed',name:'緑'}, {color:'#743da6',fill:'#f4edff',name:'紫'},
@@ -9,10 +10,11 @@ export const eventGroup=(m,n)=>(m.groups||[]).find(g=>g.id===n.groupId);
 export const groupTheme=g=>groupColors.find(c=>c.color===g?.color);
 export function matchesEvent(m,n,query=''){
  const norm=s=>String(s).normalize('NFKC').toLocaleLowerCase('ja');
- const hay=norm([n.id,n.label,n.type,eventGroup(m,n)?.name||'未分類'].join(' '));
- return norm(query).trim().split(/\s+/u).every(word=>hay.includes(word));
+ const hay=norm([n.id,n.code||'',systemText(n),n.label,n.type,eventGroup(m,n)?.name||'未分類'].join(' '));
+ return norm(query).trim().split(/\s+/u).every(word=>hay.includes(word)||hay.replace(/[-_]/g,'').includes(word.replace(/[-_]/g,'')));
 }
 export function validateGroups(m){
+ validateEventCodes(m);
  if(m.groups!==undefined&&(!Array.isArray(m.groups)||m.groups.length>40))throw Error('グループは最大40件です');
  const ids=new Set(),names=new Set();for(const g of m.groups||[]){
   if(!g||typeof g.id!=='string'||!g.id||g.id.length>80||ids.has(g.id)||typeof g.name!=='string'||!g.name.trim()||g.name.length>40||!groupTheme(g))throw Error('グループのID・名称・色を確認してください');

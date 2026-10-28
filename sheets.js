@@ -1,13 +1,14 @@
-import {validate} from './engine.js?v=fmea1';
-import {newNodeId} from './collaboration.js?v=fmea1';
+import {nextEventCode} from './event-codes.js?v=codes1';
+import {validate} from './engine.js?v=codes1';
+import {newNodeId} from './collaboration.js?v=codes1';
 const copy=x=>JSON.parse(JSON.stringify(x));
 export function localKey(hash){const id=new URLSearchParams(hash.replace(/^#/,'' )).get('local');return id&&/^[a-f0-9-]{36}$/i.test(id)?'fta-local:'+id:'formula-ev-fta-v1';}
 export function blankSheet(title='新しい解析'){return {version:1,title:title.trim()||'新しい解析',mission:'未設定（評価期間を入力）',top:'TOP',nodes:[{id:'TOP',label:'解析したい故障（名称を変更）',type:'BASIC',p:0}]};}
 export function addChild(model,parentId,type='BASIC'){
  if(!['BASIC','AND','OR'].includes(type))throw Error('事象の種類が不正です');const next=copy(model),parent=next.nodes.find(n=>n.id===parentId);if(!parent)throw Error('親事象を選んでください');
  if(parent.type==='BASIC'){parent.type='OR';parent.children=[];delete parent.p;}
- const id=newNodeId(),node={id,label:type==='BASIC'?'新しい原因（名称を変更）':'新しい中間事象',type};
- if(type==='BASIC')node.p=0;else{const leaf=newNodeId();node.children=[leaf];next.nodes.push({id:leaf,label:'新しい原因（名称を変更）',type:'BASIC',p:0});}
+ const id=newNodeId(),system=parent.system||'EVT',node={id,system,code:nextEventCode(next,system),label:type==='BASIC'?'新しい原因（名称を変更）':'新しい中間事象',type};
+ if(type==='BASIC')node.p=0;else{const leaf=newNodeId();node.children=[leaf];next.nodes.push({id:leaf,system,code:nextEventCode({...next,nodes:[...next.nodes,node]},system),label:'新しい原因（名称を変更）',type:'BASIC',p:0});}
  parent.children.push(id);next.nodes.push(node);validate(next);return {model:next,id};
 }
 export function setupSheets({getModel,isUnsaved}){

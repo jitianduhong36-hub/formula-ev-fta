@@ -1,11 +1,12 @@
-import {matchesEvent,eventGroup} from './groups.js?v=fmea1';
-import {parentsOf,descendants,connect,disconnect,moveConnection,deleteEvent} from './tree-edit.js?v=fmea1';
+import {displayId} from './event-codes.js?v=codes1';
+import {matchesEvent,eventGroup} from './groups.js?v=codes1';
+import {parentsOf,descendants,connect,disconnect,moveConnection,deleteEvent} from './tree-edit.js?v=codes1';
 const $=id=>document.getElementById(id),copy=x=>JSON.parse(JSON.stringify(x)),same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 export function setupTreeEditor({getModel,getSelected,applyModel,isFormDirty,notice}){
  let undo=[],redo=[],pending=null,locked=false;
  function buttons(){ $('undo').disabled=locked||!undo.length;$('redo').disabled=locked||!redo.length;$('undo').title=undo.length?'元に戻す: '+undo.at(-1).label:'この画面での変更はありません';$('redo').title=redo.length?'やり直す: '+redo.at(-1).label:'やり直す変更はありません';}
  function guard(){if(locked){notice('接続が完了するまでお待ちください');return false;}if(isFormDirty()){notice('先に入力中の「変更を反映」を押すか、「入力を取り消す」を押してください。');return false;}return true;}
- function option(n){const o=document.createElement('option');o.value=n.id;o.textContent=n.label+' ['+n.id+']'+(eventGroup(getModel(),n)?' / '+eventGroup(getModel(),n).name:'');return o;}
+ function option(n){const o=document.createElement('option');o.value=n.id;o.textContent=n.label+' ['+displayId(n)+']'+(eventGroup(getModel(),n)?' / '+eventGroup(getModel(),n).name:'');return o;}
  function render(){const m=getModel(),id=getSelected(),n=m.nodes.find(n=>n.id===id);if(!n)return;$('connections-title').textContent='「'+n.label+'」の接続';
   $('connected-children').replaceChildren();if(!n.children?.length)$('connected-children').textContent='下につながる原因はありません。基本事象は確率を直接入力します。';
   for(const child of n.children||[]){const c=m.nodes.find(x=>x.id===child),row=document.createElement('div'),name=document.createElement('span'),b=document.createElement('button');row.className='connection-row';name.textContent=c.label;const go=document.createElement('button');go.textContent='選択';go.onclick=()=>{if(guard())document.querySelector('#nodes button[data-id="'+CSS.escape(c.id)+'"]')?.click();};b.textContent='接続を外す';b.setAttribute('aria-label',n.label+' → '+c.label+' の接続を外す');b.onclick=()=>preview('接続を外す',()=>disconnect(getModel(),id,child),'「'+n.label+'」から「'+c.label+'」への接続だけを外します。事象は残り、他の親への接続は残ります。');row.append(name,go,b);$('connected-children').append(row);}

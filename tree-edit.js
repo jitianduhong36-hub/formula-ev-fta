@@ -1,4 +1,4 @@
-import {validate} from './engine.js?v=fmea1';
+import {validate} from './engine.js?v=codes1';
 const copy=x=>JSON.parse(JSON.stringify(x));
 export const parentsOf=(model,id)=>model.nodes.filter(n=>n.type!=='BASIC'&&n.children.includes(id));
 export function descendants(model,id){const map=new Map(model.nodes.map(n=>[n.id,n])),seen=new Set();function walk(x){if(seen.has(x))return;seen.add(x);const n=map.get(x);if(n?.type!=='BASIC')n?.children.forEach(walk);}walk(id);return seen;}

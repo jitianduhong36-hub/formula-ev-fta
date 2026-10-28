@@ -1,4 +1,4 @@
-import {groupColors,saveGroup,removeGroup} from './groups.js?v=fmea1';
+import {groupColors,saveGroup,removeGroup} from './groups.js?v=codes1';
 export function setupGroups({getModel,getSelected,applyModel,isBlocked,notice,onDraft}){
  const $=id=>document.getElementById(id),dialog=$('group-dialog');let pending=false;
  for(const c of groupColors){const o=new Option(c.name,c.color);$('group-color').append(o);}
