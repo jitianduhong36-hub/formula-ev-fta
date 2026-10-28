@@ -17,10 +17,10 @@ begin
  if p_model is null or jsonb_typeof(p_model) <> 'object' or
     p_model->>'version' is distinct from '1' or
     jsonb_typeof(p_model->'nodes') is distinct from 'array' or
-    octet_length(p_model::text)>200000 then
+    octet_length(p_model::text)>2097152 then
    raise exception 'Invalid FTA model';
  end if;
- if jsonb_array_length(p_model->'nodes') not between 1 and 150 then
+ if jsonb_array_length(p_model->'nodes') not between 1 and 300 then
    raise exception 'FTA node limit exceeded';
  end if;
 end $$;

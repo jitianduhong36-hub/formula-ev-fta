@@ -1,0 +1,4 @@
+export const limits={maxNodes:300,legacyBytes:200000,maxModelBytes:2*1024*1024,warningRatio:.85};
+export function modelSize(model){return new TextEncoder().encode(JSON.stringify(model,null,2)).length;}
+export function sizeMessage(model){const bytes=modelSize(model),used=(bytes/limits.maxModelBytes*100).toFixed(1),size=(bytes/1024).toFixed(1)+'KiB / 2MiB';return {bytes,over:bytes>limits.maxModelBytes,warning:bytes>=limits.maxModelBytes*limits.warningRatio,text:bytes>limits.maxModelBytes?'保存上限超過：'+size+'。内容を減らしてください。':bytes>=limits.maxModelBytes*limits.warningRatio?'保存上限に近づいています：'+size+'（'+used+'%）':bytes>limits.legacyBytes?'保存サイズ：'+size+'。旧200KBを超えていますが、新しい上限内です。':'保存サイズ：'+size};}
+export function validateSize(model){if(modelSize(model)>limits.maxModelBytes)throw Error('保存上限2MiBを超えています。入力内容を保持しています。不要な記述・孤立行を整理してください。');}

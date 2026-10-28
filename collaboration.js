@@ -1,4 +1,5 @@
-import {validate} from './engine.js?v=groups1';
+import {mergeFmea} from './fmea-model.js?v=fmea1';
+import {validate} from './engine.js?v=fmea1';
 const copy=x=>JSON.parse(JSON.stringify(x)),equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 // Three-way merge: edits to different fields/nodes compose; same-field edits conflict.
 export function mergeModels(base,local,remote){
@@ -12,6 +13,7 @@ export function mergeModels(base,local,remote){
    if(g)out.groups.push(copy(g));
   }
  }
+ const fm=mergeFmea(base.fmea,local.fmea,remote.fmea,field);if(fm!==undefined)out.fmea=fm;
  const b=new Map(base.nodes.map(n=>[n.id,n])),l=new Map(local.nodes.map(n=>[n.id,n])),r=new Map(remote.nodes.map(n=>[n.id,n]));out.nodes=[];
  for(const id of new Set([...r.keys(),...l.keys(),...b.keys()])){const bn=b.get(id),ln=l.get(id),rn=r.get(id);let n;
   if(!bn||!ln||!rn)n=field(bn,ln,rn,id);
