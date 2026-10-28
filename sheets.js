@@ -1,5 +1,5 @@
-import {validate} from './engine.js';
-import {newNodeId} from './collaboration.js';
+import {validate} from './engine.js?v=groups1';
+import {newNodeId} from './collaboration.js?v=groups1';
 const copy=x=>JSON.parse(JSON.stringify(x));
 export function localKey(hash){const id=new URLSearchParams(hash.replace(/^#/,'' )).get('local');return id&&/^[a-f0-9-]{36}$/i.test(id)?'fta-local:'+id:'formula-ev-fta-v1';}
 export function blankSheet(title='新しい解析'){return {version:1,title:title.trim()||'新しい解析',mission:'未設定（評価期間を入力）',top:'TOP',nodes:[{id:'TOP',label:'解析したい故障（名称を変更）',type:'BASIC',p:0}]};}

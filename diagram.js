@@ -1,3 +1,4 @@
+import {eventGroup,groupTheme} from './groups.js?v=groups1';
 // Expand each model event only once. Other occurrences are references to the
 // same ID, so every displayed branch has its own lane without changing the FTA.
 export function layoutDiagram(model){
@@ -32,11 +33,12 @@ export function renderDiagram(model){
  const fmt=p=>p===0?'0':p.toPrecision(5),short=s=>[...s].length>14?[...s].slice(0,13).join('')+'…':s;
  let body=layout.edges.map(e=>`<path class="tree-edge" data-parent="${escape(e.parent)}" data-child="${escape(e.child)}" d="${e.path}" fill="none" stroke="#668c95" stroke-width="2" marker-end="url(#fta-arrow)"><title>${escape(map.get(e.parent).label+' → '+map.get(e.child).label)}</title></path>`).join('');
  for(const p of layout.nodes){
-  const n=map.get(p.id),basic=n.type==='BASIC',common=layout.shared.get(n.id),light=basic||p.reference;
+  const n=map.get(p.id),basic=n.type==='BASIC',common=layout.shared.get(n.id),group=eventGroup(model,n),theme=groupTheme(group),light=basic||p.reference||!!group;
   const lines=Array.from(n.label).join('').match(/.{1,14}/gu)||[''];
   const heading=(p.reference?'参照 · ':'')+(common?`共通${common} · `:'')+n.type+' / '+short(n.id);
   const footer=p.reference?(basic?'p = '+fmt(n.p)+' · 同じ事象':'同じ事象を参照（展開は別の枝）'):(basic?'p = '+fmt(n.p):n.type==='AND'?'すべての子事象':'いずれかの子事象');
-  body+=`<g class="node${p.reference?' reference':''}" data-id="${escape(n.id)}" data-occurrence="${p.key}" tabindex="0" role="button" aria-label="${escape(n.label+(common?' 共通事象 同じID':'')+' を編集')}"><title>${escape(n.id+' / '+n.label+(common?'：同じIDの表示です。どの箱から編集しても全ての参照に反映します。':'')+(p.reference?' 下位原因は最初の表示で展開しています。':''))}</title><rect x="${p.x-108}" y="${p.y}" width="216" height="104" rx="${basic?22:7}" fill="${light?'#f2faf6':'#163d45'}" stroke="${common?'#b57a25':light?'#8dbfaf':'#163d45'}"${p.reference?' stroke-dasharray="5 3"':''}/><text x="${p.x}" y="${p.y+20}" text-anchor="middle" font-size="10" fill="${light?'#08745c':'#78e1c4'}">${escape(heading)}</text>${lines.slice(0,2).map((s,i)=>`<text x="${p.x}" y="${p.y+45+i*17}" text-anchor="middle" font-size="12" fill="${light?'#183b40':'white'}">${escape(s)}</text>`).join('')}<text x="${p.x}" y="${p.y+89}" text-anchor="middle" font-size="10" fill="${light?'#537b70':'#b5cecf'}">${escape(footer)}</text></g>`;
+  const groupLabel=group?`<text x="${p.x}" y="${p.y+14}" text-anchor="middle" font-size="10" fill="${group.color}">${escape([...group.name].slice(0,16).join('')+([...group.name].length>16?'…':''))}</text>`:'';
+  body+=`<g class="node${p.reference?' reference':''}" data-id="${escape(n.id)}" data-occurrence="${p.key}" tabindex="0" role="button" aria-label="${escape(n.label+(common?' 共通事象 同じID':'')+' を編集')}"><title>${escape(n.id+' / '+n.label+(common?'：同じIDの表示です。どの箱から編集しても全ての参照に反映します。':'')+(group?' グループ：'+group.name:'')+(p.reference&&!basic?' 下位原因は最初の表示で展開しています。':''))}</title><rect x="${p.x-108}" y="${p.y}" width="216" height="104" rx="${basic?22:7}" fill="${theme?.fill||(light?'#f2faf6':'#163d45')}" stroke="${group?.color||(common?'#b57a25':light?'#8dbfaf':'#163d45')}"${p.reference?' stroke-dasharray="5 3"':''}/>${groupLabel}<text x="${p.x}" y="${p.y+(group?31:20)}" text-anchor="middle" font-size="10" fill="${light?'#08745c':'#78e1c4'}">${escape(heading)}</text>${lines.slice(0,2).map((s,i)=>`<text x="${p.x}" y="${p.y+(group?51:45)+i*17}" text-anchor="middle" font-size="12" fill="${light?'#183b40':'white'}">${escape(s)}</text>`).join('')}<text x="${p.x}" y="${p.y+89}" text-anchor="middle" font-size="10" fill="${light?'#537b70':'#b5cecf'}">${escape(footer)}</text></g>`;
  }
  const note=layout.shared.size?'共通番号・IDが同じ箱は、同じ事象です。参照の箱を分けて表示し、線の交差を避けています。':'線ごとに接続口と経路を分けています。';
  const noteLines=note.match(new RegExp(`.{1,${Math.floor((layout.width-56)/12)}}`,'gu'))||[''],svgHeight=layout.height+20+18*noteLines.length;

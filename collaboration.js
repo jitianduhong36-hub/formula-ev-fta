@@ -1,9 +1,17 @@
-import {validate} from './engine.js';
+import {validate} from './engine.js?v=groups1';
 const copy=x=>JSON.parse(JSON.stringify(x)),equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 // Three-way merge: edits to different fields/nodes compose; same-field edits conflict.
 export function mergeModels(base,local,remote){
  const conflicts=[],out=copy(remote);function field(b,l,r,path){if(equal(l,b))return r;if(equal(r,b)||equal(l,r))return l;conflicts.push(path);return r;}
  for(const k of ['title','mission','top'])out[k]=field(base[k],local[k],remote[k],k);
+ // Group definitions merge by ID and field, just like event metadata.
+ if(base.groups||local.groups||remote.groups){
+  const gs=[base,local,remote].map(m=>new Map((m.groups||[]).map(g=>[g.id,g])));out.groups=[];
+  for(const id of new Set([...gs[2].keys(),...gs[1].keys(),...gs[0].keys()])){const [b,l,r]=gs.map(g=>g.get(id));let g;
+   if(!b||!l||!r)g=field(b,l,r,'group.'+id);else{g={id};for(const k of ['name','color'])g[k]=field(b[k],l[k],r[k],'group.'+id+'.'+k);}
+   if(g)out.groups.push(copy(g));
+  }
+ }
  const b=new Map(base.nodes.map(n=>[n.id,n])),l=new Map(local.nodes.map(n=>[n.id,n])),r=new Map(remote.nodes.map(n=>[n.id,n]));out.nodes=[];
  for(const id of new Set([...r.keys(),...l.keys(),...b.keys()])){const bn=b.get(id),ln=l.get(id),rn=r.get(id);let n;
   if(!bn||!ln||!rn)n=field(bn,ln,rn,id);

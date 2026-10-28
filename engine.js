@@ -1,7 +1,8 @@
+import {validateGroups} from './groups.js?v=groups1';
 export function validate(m){
  if(!m||m.version!==1||!Array.isArray(m.nodes)||m.nodes.length>150)throw Error('形式が不正です（version:1、最大150ノード）');
  const map=new Map();for(const n of m.nodes){if(!n||typeof n.id!=='string'||!n.id||n.id.length>80||map.has(n.id)||typeof n.label!=='string'||n.label.length>200||!['BASIC','AND','OR'].includes(n.type))throw Error('ノードのID・名称・種類を確認してください');map.set(n.id,n);if(n.type==='BASIC'){if(typeof n.p!=='number'||!Number.isFinite(n.p)||n.p<0||n.p>1)throw Error('確率は0〜1で入力してください');}else if(!Array.isArray(n.children)||!n.children.length||n.children.length>150||n.children.some(x=>typeof x!=='string'))throw Error('ゲートには子事象が必要です');}
- const active=new Set(),done=new Set();function walk(id){if(!map.has(id))throw Error('参照先がありません: '+id);if(active.has(id))throw Error('循環参照があります');if(done.has(id))return;active.add(id);const n=map.get(id);if(n.type!=='BASIC')n.children.forEach(walk);active.delete(id);done.add(id);}if(!map.has(m.top))throw Error('トップ事象を指定してください');for(const id of map.keys())walk(id);return map;
+ validateGroups(m);const active=new Set(),done=new Set();function walk(id){if(!map.has(id))throw Error('参照先がありません: '+id);if(active.has(id))throw Error('循環参照があります');if(done.has(id))return;active.add(id);const n=map.get(id);if(n.type!=='BASIC')n.children.forEach(walk);active.delete(id);done.add(id);}if(!map.has(m.top))throw Error('トップ事象を指定してください');for(const id of map.keys())walk(id);return map;
 }
 export function analyze(m){
  const map=validate(m),reachable=new Set();function visit(id){if(reachable.has(id))return;reachable.add(id);const n=map.get(id);if(n.type!=='BASIC')n.children.forEach(visit);}visit(m.top);

@@ -1,19 +1,22 @@
-import {parentsOf,descendants,connect,disconnect,moveConnection,deleteEvent} from './tree-edit.js';
+import {matchesEvent,eventGroup} from './groups.js?v=groups1';
+import {parentsOf,descendants,connect,disconnect,moveConnection,deleteEvent} from './tree-edit.js?v=groups1';
 const $=id=>document.getElementById(id),copy=x=>JSON.parse(JSON.stringify(x)),same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 export function setupTreeEditor({getModel,getSelected,applyModel,isFormDirty,notice}){
  let undo=[],redo=[],pending=null,locked=false;
  function buttons(){ $('undo').disabled=locked||!undo.length;$('redo').disabled=locked||!redo.length;$('undo').title=undo.length?'元に戻す: '+undo.at(-1).label:'この画面での変更はありません';$('redo').title=redo.length?'やり直す: '+redo.at(-1).label:'やり直す変更はありません';}
  function guard(){if(locked){notice('接続が完了するまでお待ちください');return false;}if(isFormDirty()){notice('先に入力中の「変更を反映」を押すか、「入力を取り消す」を押してください。');return false;}return true;}
- function option(n){const o=document.createElement('option');o.value=n.id;o.textContent=n.label+' ['+n.id+']';return o;}
+ function option(n){const o=document.createElement('option');o.value=n.id;o.textContent=n.label+' ['+n.id+']'+(eventGroup(getModel(),n)?' / '+eventGroup(getModel(),n).name:'');return o;}
  function render(){const m=getModel(),id=getSelected(),n=m.nodes.find(n=>n.id===id);if(!n)return;$('connections-title').textContent='「'+n.label+'」の接続';
   $('connected-children').replaceChildren();if(!n.children?.length)$('connected-children').textContent='下につながる原因はありません。基本事象は確率を直接入力します。';
   for(const child of n.children||[]){const c=m.nodes.find(x=>x.id===child),row=document.createElement('div'),name=document.createElement('span'),b=document.createElement('button');row.className='connection-row';name.textContent=c.label;const go=document.createElement('button');go.textContent='選択';go.onclick=()=>{if(guard())document.querySelector('#nodes button[data-id="'+CSS.escape(c.id)+'"]')?.click();};b.textContent='接続を外す';b.setAttribute('aria-label',n.label+' → '+c.label+' の接続を外す');b.onclick=()=>preview('接続を外す',()=>disconnect(getModel(),id,child),'「'+n.label+'」から「'+c.label+'」への接続だけを外します。事象は残り、他の親への接続は残ります。');row.append(name,go,b);$('connected-children').append(row);}
   const ps=parentsOf(m,id);$('connected-parents').replaceChildren();if(!ps.length)$('connected-parents').textContent=id===m.top?'トップ事象です。':'親がありません（未接続）。上の親を選んで「既存の事象をつなぐ」から接続できます。';
   for(const p of ps){const row=document.createElement('div'),name=document.createElement('span'),b=document.createElement('button');row.className='connection-row';name.textContent=p.label;b.textContent='この親との接続を外す';b.setAttribute('aria-label',p.label+' → '+n.label+' の接続を外す');b.onclick=()=>preview('接続を外す',()=>disconnect(getModel(),p.id,id),'「'+p.label+'」との接続だけを外します。「'+n.label+'」とその下の原因は残ります。');row.append(name,b);$('connected-parents').append(row);}
-  $('connect-existing').replaceChildren();for(const c of m.nodes)if(c.id!==id&&!n.children?.includes(c.id)&&!descendants(m,c.id).has(id))$('connect-existing').append(option(c));
+  renderConnectOptions();
   $('move-from').replaceChildren();for(const p of ps)$('move-from').append(option(p));$('move-to').replaceChildren();for(const p of m.nodes)if(p.id!==id&&!descendants(m,id).has(p.id)&&!ps.some(x=>x.id===p.id))$('move-to').append(option(p));
   $('delete').disabled=locked||id===m.top;$('delete-hint').textContent=id===m.top?'トップ事象は削除できません。別のトップを指定するか新規シートを作成してください。':'事象を全ての親から外して削除します。削除前に影響を確認できます。';buttons();
  }
+ function renderConnectOptions(){const m=getModel(),id=getSelected(),n=m.nodes.find(n=>n.id===id),sel=$('connect-existing'),previous=sel.value;sel.replaceChildren();let total=0;for(const c of m.nodes)if(c.id!==id&&!n.children?.includes(c.id)&&!descendants(m,c.id).has(id)){total++;if(matchesEvent(m,c,$('connect-search').value))sel.append(option(c));}if([...sel.options].some(o=>o.value===previous))sel.value=previous;$('connect-count').textContent='候補 '+sel.options.length+' / '+total+'件';$('connect-button').disabled=locked||!sel.options.length;}
+ $('connect-search').oninput=renderConnectOptions;
  function preview(title,build,message){if(!guard())return;try{const before=copy(getModel()),r=build();pending={before,after:r.model,label:title};$('operation-title').textContent=title;$('operation-message').textContent=message;$('operation-impact').textContent=(r.removed?'削除する事象: '+r.removed.map(id=>before.nodes.find(n=>n.id===id)?.label||id).join('、')+'。 ':'')+(r.preserved?.length?'他の枝でも使われるため残す事象: '+r.preserved.map(id=>before.nodes.find(n=>n.id===id)?.label||id).join('、')+'。 ':'')+r.warnings.join(' ');$('operation-cloud').textContent='確定すると現在のシートへ反映されます。共有シートではメンバーにも同期されます。「元に戻す」も共有変更です。';$('operation-dialog').showModal();}catch(e){notice(e.message);}}
  $('operation-cancel').onclick=()=>{pending=null;$('operation-dialog').close();};$('operation-dialog').addEventListener('cancel',()=>{pending=null;});
  $('edge-choice-cancel').onclick=()=>$('edge-choice-dialog').close();
